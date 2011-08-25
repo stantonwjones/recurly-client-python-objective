@@ -20,7 +20,7 @@ from xml.dom import minidom
 
 URL = 'https://%s.staging.recurly.com'
 
-ENVIRONMENT = 'production'
+ENVIRONMENT = 'sandbox'
 SUBDOMAIN = ''
 USER = ''
 PASSWORD = ''
@@ -81,11 +81,14 @@ class RecurlyClient(object):
     response = None
     errors = None
     
-    def __init__(self, username=USERNAME, password=PASSWORD, subdomain=SUBDOMAIN, uri=''):
-        self.username = username
-        self.password = password
-        self.subdomain = subdomain
-        self.uri = uri
+    def __init__(self, uri='', object = None):
+        self.username = USERNAME
+        self.password = PASSWORD
+        self.subdomain = SUBDOMAIN
+        if object == None:
+          self.uri = uri
+        else:
+          self.uri = object.uri
     
     
     def __getattr__(self, attribute_name):
