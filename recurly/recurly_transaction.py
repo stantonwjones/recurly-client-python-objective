@@ -1,0 +1,2 @@
+class RecurlyTransaction(RecurlyObject):
+  pass

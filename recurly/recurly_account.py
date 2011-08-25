@@ -1,14 +1,21 @@
+URI = '/accounts%s'
+
+ATTRIBUTES = [
+  'account_code',
+  'username',
+  'first_name',
+  'last_name',
+  'email',
+  'company_name',
+  'hosted_login_token',
+  'accept_language'
+]
+
 class RecurlyAccount(RecurlyObject):
 
-  URI = '/accounts%s'
-
-  ATTRIBUTES = [
-    'account_code',
-    'first_name',
-    'last_name',
-    'email',
-    'company'
-  ]
+  def __init__(self, attributes = {}):
+    for attr_string in ATTRIBUTES:
+      self.__dict__[attr_string] = attributes[attr_string]
 
 # List all accounts for this site (paginated)
   @staticmethod

@@ -1,0 +1,2 @@
+class RecurlyBillingInfo(RecurlyObject):
+  pass
