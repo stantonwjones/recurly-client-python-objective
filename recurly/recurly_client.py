@@ -132,7 +132,7 @@ class RecurlyClient(object):
         if kwargs:
             args = "?%s" % (urllib.urlencode(kwargs.items()))
         elif method == 'DELETE' and kwargs:
-			args = "?%s" % (urllib.urlencode(kwargs.items()))
+        args = "?%s" % (urllib.urlencode(kwargs.items()))
         
         # Build url from the pieces
         url = (URL % self.subdomain) + '/'.join(urili) + args

@@ -1,0 +1,2 @@
+class RecurlyCharge(RecurlyObject):
+  pass

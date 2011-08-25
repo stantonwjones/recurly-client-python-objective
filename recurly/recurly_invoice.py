@@ -1,0 +1,2 @@
+class RecurlyInvoice(RecurlyObject):
+  pass

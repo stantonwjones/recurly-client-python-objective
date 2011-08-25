@@ -1,0 +1,2 @@
+class RecurlyCredit(RecurlyObject):
+  pass
