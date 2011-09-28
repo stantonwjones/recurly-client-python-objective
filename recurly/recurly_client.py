@@ -18,7 +18,7 @@ from urllib2 import URLError, HTTPError
 from xml.dom import minidom
 
 
-URL = 'https://%s.staging.recurly.com'
+URL = 'https://%s.recurly.com'
 
 ENVIRONMENT = 'sandbox'
 SUBDOMAIN = ''
@@ -34,7 +34,7 @@ CRUD_METHODS = {
         'delete': 'DELETE'
     }
 
-# A list of resources and primary keys for each. If you wish 
+# A list of resources and primary keys for each. If you wish
 # to use 'id' for every resource, just remove these
 PK = {
         'account': 'account_code',
@@ -80,7 +80,7 @@ class RecurlyClient(object):
     uri = ''
     response = None
     errors = None
-    
+
     def __init__(self, uri='', object = None):
         self.username = USERNAME
         self.password = PASSWORD
@@ -89,20 +89,20 @@ class RecurlyClient(object):
           self.uri = uri
         else:
           self.uri = object.uri
-    
-    
+
+
     def __getattr__(self, attribute_name):
         try:
             return object.__getattr__(self, attribute_name)
         except AttributeError:
             return Recurly(self.username, self.password, self.subdomain, self.uri + '/' + attribute_name)
-    
-    
+
+
     def __call__(self, **kwargs):
-        # Split out uri into segments and assume the last segment is an 
+        # Split out uri into segments and assume the last segment is an
         # action. If it isn't place it on the end of the url again
         urili = self.uri.split('/')
-        
+
         # Determine method with which to to request uri
         action = urili.pop()
         try:
@@ -110,20 +110,20 @@ class RecurlyClient(object):
         except KeyError:
             urili.append(action)
             method = 'GET'
-        
+
         r = Recurly.singularize(urili[1])
         try:
             pk = PK[r]
         except KeyError:
             pk = 'id'
-                
+
         model = Recurly.singularize(urili[-1])
-                
+
         # If pk is set in arguments, place it in url instead
         uid = kwargs.pop(pk, False)
         if uid:
             urili.insert(2, uid)
-        
+
         # Also, remove data from arguments and convert it to XML
         data = kwargs.pop('data', None)
 
@@ -136,10 +136,10 @@ class RecurlyClient(object):
             args = "?%s" % (urllib.urlencode(kwargs.items()))
         elif method == 'DELETE' and kwargs:
         args = "?%s" % (urllib.urlencode(kwargs.items()))
-        
+
         # Build url from the pieces
         url = (URL % self.subdomain) + '/'.join(urili) + args
-        
+
         # Build request with our new url, method, and data
         opener = urllib2.build_opener(urllib2.HTTPHandler)
         self._request = urllib2.Request(url=url, data=data)
@@ -148,13 +148,13 @@ class RecurlyClient(object):
         self._request.add_header('Content-Type', 'application/xml; charset=utf-8')
         self._request.add_header('User-Agent', 'Recurly Python Client (v' + __version__ + ')')
         self._request.add_header('Authorization', 'Basic %s' % base64.standard_b64encode('%s:%s' % (self.username, self.password)))
-                
+
         try:
             response = opener.open(self._request)
             xml_response = response.read()
         except HTTPError, e:
             xml_response = e.read()
-            
+
             # All responses in this range are successes
             if e.code in range(200, 205):
                 pass
@@ -172,64 +172,64 @@ class RecurlyClient(object):
                 raise RecurlyException(e)
         except URLError, e:
             raise RecurlyConnectionException(e)
-                
-        xml_response = Recurly.remove_white_space(xml_response)
-        
+
+        xml_response = RecurlyClient.remove_white_space(xml_response)
+
         if xml_response is '':
             self.response = None
         else:
-            self.response = Recurly.xml_to_dict(xml_response)
-        
+            self.response = RecurlyClient.xml_to_dict(xml_response)
+
         return self.response
-    
-    
+
+
     def parse_errors(self, xml):
-        xml = Recurly.remove_white_space(xml)
+        xml = RecurlyClient.remove_white_space(xml)
         if not xml:
             return None
-        
-        er = Recurly.xml_to_dict(xml)
+
+        er = RecurlyClient.xml_to_dict(xml)
         ers = er['error']
-        
+
         # Remove periods from all sentences that have them.
         try:
         	self.errors = [e[:-1] if e[-1:] == '.' else e for e in ers]
         except:
             return None
         return '. '.join(self.errors) + '.'
-    
-    
+
+
     def parse_notification(self, xml):
-        xml = Recurly.remove_white_space(xml)
+        xml = RecurlyClient.remove_white_space(xml)
         doc = minidom.parseString(xml)
         root = doc.documentElement
-        self.response = Recurly._parse_xml_doc(root)
+        self.response = RecurlyClient._parse_xml_doc(root)
         return root.tagName
-    
-    
+
+
     @staticmethod
     def singularize(name):
         # @todo Account for situation in the future where resource has
         # a name where we can't singularize it by removing the trailing 's'.
         # Also, this feels/looks like an ugly way to do this
         return name[:-1] if name[:-1] in MULTIPLE else name
-    
-    
+
+
     @staticmethod
     def remove_white_space(xml):
         xml = re.sub(">\s+", '>', xml)
-        xml = xml.strip()        
+        xml = xml.strip()
         return xml
-    
-    
+
+
     @staticmethod
     def _build_xml_doc(doc, root, data):
-        for n in data:          
+        for n in data:
             element = doc.createElement(n)
             root.appendChild(element)
 
             if type(data[n]) == types.DictType:
-                Recurly._build_xml_doc(doc, element, data[n])
+                RecurlyClient._build_xml_doc(doc, element, data[n])
             elif type(data[n]) == types.StringType:
                 element.appendChild(doc.createTextNode(unicode(data[n], 'utf-8')))
             elif type(data[n]) == types.UnicodeType:
@@ -239,8 +239,8 @@ class RecurlyClient(object):
             elif type(data[n]) == types.ListType:
                 if n[:-1] in MULTIPLE:
                     for addon in data[n]:
-                        addOnElement = doc.createElement(Recurly.singularize(n))
-                        Recurly._build_xml_doc(doc, addOnElement, addon)
+                        addOnElement = doc.createElement(RecurlyClient.singularize(n))
+                        RecurlyClient._build_xml_doc(doc, addOnElement, addon)
                         element.appendChild(addOnElement)
 
     @staticmethod
@@ -248,7 +248,7 @@ class RecurlyClient(object):
         doc = minidom.Document()
         root = doc.createElement(trunk)
         doc.appendChild(root)
-        Recurly._build_xml_doc(doc, root, data)
+        RecurlyClient._build_xml_doc(doc, root, data)
 
         return doc.toxml(encoding='utf-8')
 
@@ -259,7 +259,7 @@ class RecurlyClient(object):
             root_type = attr.value
         except:
             root_type = None
-        
+
         child = root.firstChild
         if not child:
             return None
@@ -274,7 +274,7 @@ class RecurlyClient(object):
                     di[child.tagName]
                 except KeyError:
                     # @todo This could be changed so that if the root type is an array,
-                    # we automatically treat the resource as an array (eg. no checking 
+                    # we automatically treat the resource as an array (eg. no checking
                     # the element name)
                     if ((child.tagName in MULTIPLE) and (root_type in ['array', 'collection'])) or child.tagName in FORCED_MULTIPLE:
                         di[child.tagName] = []
@@ -282,25 +282,25 @@ class RecurlyClient(object):
                         di[child.tagName] = None
 
                 if di[child.tagName] is None:
-                    di[child.tagName] = Recurly._parse_xml_doc(child)
+                    di[child.tagName] = RecurlyClient._parse_xml_doc(child)
                 elif type(di[child.tagName]) is types.ListType:
                     if child.tagName == 'add_ons':
                         grandchild = child.firstChild
                         while grandchild is not None:
-                            di[child.tagName].append(Recurly._parse_xml_doc(grandchild))
+                            di[child.tagName].append(RecurlyClient._parse_xml_doc(grandchild))
                             grandchild = grandchild.nextSibling
                     else:
                         di[child.tagName].append(Recurly._parse_xml_doc(child))
             child = child.nextSibling
         return di
-    
-    
+
+
     @staticmethod
     def xml_to_dict(xml):
         doc = minidom.parseString(xml)
         return Recurly._parse_xml_doc(doc.documentElement)
-    
- 
+
+
 __all__ = ['Recurly', 'RecurlyException', 'RecurlyValidationException', 'RecurlyConnectionException', 'RecurlyNotFoundException', 'RecurlyServerException', 'RecurlyServiceUnavailableException']
 
 
